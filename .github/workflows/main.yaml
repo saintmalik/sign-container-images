@@ -1,10 +1,8 @@
-name: 'sign container images'
-
-on:
-  push:
+name: sign container images
+on: push
 
 jobs:
-    name: 'Build and Sign Container's image'
+ build-sign-container-image:
     runs-on: ubuntu-latest
     steps:
       - name: "checkout"
