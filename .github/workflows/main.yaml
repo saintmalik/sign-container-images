@@ -22,5 +22,6 @@ jobs:
         run: |
           cosign sign --key env://COSIGN_PRIVATE_KEY ttl.sh/${IMAGE_TAG}:1h
         env:
+          IMAGE_TAG: signed-test-${{ steps.uuid.outputs.sha_short }}
           COSIGN_PRIVATE_KEY: ${{secrets.COSIGN_PRIVATE_KEY}}
           COSIGN_PASSWORD: ${{secrets.COSIGN_PASSWORD}}
