@@ -20,7 +20,7 @@ jobs:
         uses: sigstore/cosign-installer@main
       - name: Signing the image with a key
         run: |
-          cosign sign --key env://COSIGN_PRIVATE_KEY ttl.sh/${IMAGE_TAG}:1h
+          cosign sign --key env://COSIGN_PRIVATE_KEY -a "author=SaintMalik" ttl.sh/${IMAGE_TAG}:1h
         env:
           IMAGE_TAG: signed-test-${{ steps.uuid.outputs.sha_short }}
           COSIGN_PRIVATE_KEY: ${{secrets.COSIGN_PRIVATE_KEY}}
