@@ -1,0 +1,28 @@
+name: 'sign container images'
+
+on:
+  push:
+
+jobs:
+    name: 'Build and Sign Container's image'
+    runs-on: ubuntu-latest
+    steps:
+      - name: "checkout"
+        uses: actions/checkout@v2
+      - name: Generate uuid from shortened commit SHA
+        id: uuid
+        run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+      - name: Build and push
+        env:
+          IMAGE_TAG: signed-test-${{ steps.uuid.outputs.sha_short }}
+        run: |
+          docker build -t ttl.sh/${IMAGE_TAG}:1h .
+          docker push ttl.sh/${IMAGE_TAG}:1h
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@main
+      - name: Signing the image with a key
+        run: |
+          cosign sign --key env://COSIGN_PRIVATE_KEY ttl.sh/${IMAGE_TAG}:1h
+        env:
+          COSIGN_PRIVATE_KEY: ${{secrets.COSIGN_PRIVATE_KEY}}
+          COSIGN_PASSWORD: ${{secrets.COSIGN_PASSWORD}}
