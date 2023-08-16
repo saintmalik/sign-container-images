@@ -4,6 +4,9 @@ on: push
 jobs:
  build-sign-container-image:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     steps:
       - name: "checkout"
         uses: actions/checkout@v3
@@ -34,8 +37,8 @@ jobs:
       - name: Keyless signing of image
         run: |
           echo ${{ steps.digest.outputs.image_sha }}
-          cosign sign --yes --rekor-url "https://rekor.sigstore.dev/" ttl.sh/${IMAGE_TAG}@${{ steps.digest.outputs.image_sha }}
+          cosign sign --yes --rekor-url "https://rekor.sigstore.dev/" ${{ steps.digest.outputs.image_sha }}
 
-      - name: Signing the image
+      - name: Verify the image signing
         run: |
-          cosign verify  --rekor-url "https://rekor.sigstore.dev/" ttl.sh/${IMAGE_TAG}@${{ steps.digestval.outputs.image_sha }} --certificate-identity "https://github.com/saintmalik/sign-container-images/.github/workflows/keyless..yaml@refs/heads/main" --certificate-oidc-issuer "https://token.actions.githubusercontent.com" | jq .
+          cosign verify  --rekor-url "https://rekor.sigstore.dev/" ${{ steps.digestval.outputs.image_sha }} --certificate-identity "https://github.com/saintmalik/sign-container-images/.github/workflows/keyless..yaml@refs/heads/main" --certificate-oidc-issuer "https://token.actions.githubusercontent.com" | jq .
