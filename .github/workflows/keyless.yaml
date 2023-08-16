@@ -1,0 +1,34 @@
+name: keyless signing container images
+on: push
+
+jobs:
+ build-sign-container-image:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "checkout"
+        uses: actions/checkout@v3
+
+      - name: Generate uuid from shortened commit SHA
+        id: uuid
+        run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+
+      - name: Build and push
+        env:
+          IMAGE_TAG: signed-test-${{ steps.uuid.outputs.sha_short }}
+        run: |
+          docker build -t ttl.sh/${IMAGE_TAG}:1h .
+          docker push ttl.sh/${IMAGE_TAG}:1h
+          
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3.1.1
+        with:
+          cosign-release: 'v2.1.1'
+
+      - name: Keyless signing of image
+        run: |
+          cosign sign --yes --rekor-url "https://rekor.sigstore.dev/" ${{ steps.digestval.outputs.image_sha }}
+
+      - name: Signing the image
+        if: steps.changed-files-specific.outputs.any_changed == 'true'
+        run: |
+          cosign verify  --rekor-url "https://rekor.sigstore.dev/" ${{ steps.digestval.outputs.image_sha }} --certificate-identity "https://github.com/saintmalik/sign-container-images/.github/workflows/keyless..yaml@refs/heads/main" --certificate-oidc-issuer "https://token.actions.githubusercontent.com" | jq .
