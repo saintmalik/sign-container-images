@@ -20,6 +20,8 @@ jobs:
           docker push ttl.sh/${IMAGE_TAG}:1h
           
       - name: Get image digest
+        env:
+          IMAGE_TAG: signed-test-${{ steps.uuid.outputs.sha_short }}
         id: digest
         run: |
           echo "image_sha=$(docker inspect --format='{{index .RepoDigests 0}}' ttl.sh/${IMAGE_TAG}:1h)" >> $GITHUB_OUTPUT
@@ -32,8 +34,8 @@ jobs:
       - name: Keyless signing of image
         run: |
           echo ${{ steps.digest.outputs.image_sha }}
-          cosign sign --yes --rekor-url "https://rekor.sigstore.dev/" ttl.sh/${IMAGE_TAG}:1h
+          cosign sign --yes --rekor-url "https://rekor.sigstore.dev/" ttl.sh/${IMAGE_TAG}@${{ steps.digest.outputs.image_sha }}
 
       - name: Signing the image
         run: |
-          cosign verify  --rekor-url "https://rekor.sigstore.dev/" ${{ steps.digestval.outputs.image_sha }} --certificate-identity "https://github.com/saintmalik/sign-container-images/.github/workflows/keyless..yaml@refs/heads/main" --certificate-oidc-issuer "https://token.actions.githubusercontent.com" | jq .
+          cosign verify  --rekor-url "https://rekor.sigstore.dev/" ttl.sh/${IMAGE_TAG}@${{ steps.digestval.outputs.image_sha }} --certificate-identity "https://github.com/saintmalik/sign-container-images/.github/workflows/keyless..yaml@refs/heads/main" --certificate-oidc-issuer "https://token.actions.githubusercontent.com" | jq .
