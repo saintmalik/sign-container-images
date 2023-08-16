@@ -30,7 +30,6 @@ jobs:
           cosign-release: 'v2.1.1'
 
       - name: Keyless signing of image
-        id: digest
         run: |
           echo ${{ steps.digest.outputs.image_sha }}
           cosign sign --yes --rekor-url "https://rekor.sigstore.dev/" ttl.sh/${IMAGE_TAG}:1h
