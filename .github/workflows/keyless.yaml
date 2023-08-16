@@ -19,16 +19,22 @@ jobs:
           docker build -t ttl.sh/${IMAGE_TAG}:1h .
           docker push ttl.sh/${IMAGE_TAG}:1h
           
+      - name: Get image digest
+        id: digest
+        run: |
+          echo "image_sha=$(docker inspect --format='{{index .RepoDigests 0}}' ttl.sh/${IMAGE_TAG}:1h)" >> $GITHUB_OUTPUT
+     
       - name: Install cosign
         uses: sigstore/cosign-installer@v3.1.1
         with:
           cosign-release: 'v2.1.1'
 
       - name: Keyless signing of image
+        id: digest
         run: |
-          cosign sign --yes --rekor-url "https://rekor.sigstore.dev/" ${{ steps.digestval.outputs.image_sha }}
+          echo ${{ steps.digest.outputs.image_sha }}
+          cosign sign --yes --rekor-url "https://rekor.sigstore.dev/" ttl.sh/${IMAGE_TAG}:1h
 
       - name: Signing the image
-        if: steps.changed-files-specific.outputs.any_changed == 'true'
         run: |
           cosign verify  --rekor-url "https://rekor.sigstore.dev/" ${{ steps.digestval.outputs.image_sha }} --certificate-identity "https://github.com/saintmalik/sign-container-images/.github/workflows/keyless..yaml@refs/heads/main" --certificate-oidc-issuer "https://token.actions.githubusercontent.com" | jq .
