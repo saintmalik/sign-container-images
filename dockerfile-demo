@@ -1,0 +1,17 @@
+# ------> build stage
+FROM node:latest AS build
+RUN  wget -O /usr/bin/dumb-init https://github.com/Yelp/dumb-init/releases/download/v1.2.5/dumb-init_1.2.5_x86_64
+WORKDIR /app
+COPY package.json yarn.lock ./
+RUN yarn install --frozen-lockfile \
+    && mkdir /app/uploads
+
+# ------> production stage, multi stage build
+FROM node:20.6.1-alpine3.18
+COPY --chown=node:node --from=build /usr/bin/dumb-init /usr/bin/dumb-init
+RUN  chmod +x /usr/bin/dumb-init
+USER node
+WORKDIR /app
+COPY --chown=node:node --from=build /app/node_modules /app/node_modules
+COPY --chown=node:node --from=build /app/uploads /app/uploads
+COPY --chown=node:node . ./
